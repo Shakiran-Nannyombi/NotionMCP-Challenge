@@ -1,0 +1,34 @@
+{
+  "seen_pages": {},
+  "active_runs": {
+    "9e00662a-f3c0-4324-b976-a74572455aec": {
+      "idea_page_id": "test-page-id",
+      "status": "DONE",
+      "started_at": "2026-03-29T05:38:20.298085+00:00",
+      "finished_at": "2026-03-29T05:38:21.002786+00:00",
+      "tasks": [
+        {
+          "order": 1,
+          "title": "Create calculator module",
+          "notion_page_id": "mock-page-Create calculator module",
+          "status": "Done",
+          "error": null
+        },
+        {
+          "order": 2,
+          "title": "Add input validation",
+          "notion_page_id": "mock-page-Add input validation",
+          "status": "Done",
+          "error": null
+        },
+        {
+          "order": 3,
+          "title": "Create CLI interface",
+          "notion_page_id": "mock-page-Create CLI interface",
+          "status": "Done",
+          "error": null
+        }
+      ]
+    }
+  }
+}
