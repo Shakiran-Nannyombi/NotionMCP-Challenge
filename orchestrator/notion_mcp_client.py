@@ -1,19 +1,20 @@
 """Notion MCP client wrapper for the orchestrator.
 
-This module provides a thin wrapper around the Notion MCP server that the
-orchestrator components expect. It translates between the orchestrator's
-interface and the actual MCP tool calls.
+This module provides a thin wrapper around the Notion API that the
+orchestrator components expect. It uses the official Notion SDK directly
+since we're running as a standalone Python application.
 """
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from orchestrator.errors import MCPConnectionError
 
 
 class NotionMCPClient:
-    """Wrapper around Notion MCP server tools.
+    """Wrapper around Notion API for the orchestrator.
     
     This class provides the interface that orchestrator components expect:
     - search(query, filter) for Poller
@@ -24,42 +25,52 @@ class NotionMCPClient:
     - update_page(page_id, properties) for NotionWriter
     - ping() for connection check
     
-    In a real implementation, these methods would call the Notion MCP tools.
-    For now, this is a stub that shows the expected interface.
+    Uses the official Notion Python SDK (@notionhq/client equivalent).
     """
     
-    def __init__(self, mcp_server_url: str | None = None):
-        """Initialize the Notion MCP client.
+    def __init__(self, api_key: str | None = None):
+        """Initialize the Notion client.
         
         Args:
-            mcp_server_url: URL of the Notion MCP server. If None, reads from
-                environment variable NOTION_MCP_URL.
+            api_key: Notion API key. If None, reads from NOTION_API_KEY env var.
         """
-        self.mcp_server_url = mcp_server_url or self._get_mcp_url_from_env()
-        self._connected = False
+        self.api_key = api_key or self._get_api_key_from_env()
+        self._client = None
     
-    def _get_mcp_url_from_env(self) -> str:
-        """Get MCP server URL from environment."""
-        import os
-        url = os.environ.get("NOTION_MCP_URL")
-        if not url:
+    def _get_api_key_from_env(self) -> str:
+        """Get API key from environment."""
+        api_key = os.environ.get("NOTION_API_KEY")
+        if not api_key:
             raise MCPConnectionError(
-                "NOTION_MCP_URL environment variable not set. "
-                "Please configure the Notion MCP server URL."
+                "NOTION_API_KEY environment variable not set. "
+                "Please set your Notion API key."
             )
-        return url
+        return api_key
+    
+    def _ensure_client(self):
+        """Lazy-load the Notion client."""
+        if self._client is None:
+            try:
+                from notion_client import Client
+                self._client = Client(auth=self.api_key)
+            except ImportError:
+                raise ImportError(
+                    "notion-client package not installed. "
+                    "Install with: pip install notion-client"
+                )
     
     def ping(self) -> None:
-        """Check if the MCP server is reachable.
+        """Check if the Notion API is reachable.
         
         Raises:
-            MCPConnectionError: If the server is unreachable.
+            MCPConnectionError: If the API is unreachable.
         """
-        # TODO: Implement actual MCP ping/health check
-        # For now, just check if URL is set
-        if not self.mcp_server_url:
-            raise MCPConnectionError("MCP server URL not configured")
-        self._connected = True
+        self._ensure_client()
+        try:
+            # Try to list users as a health check
+            self._client.users.me()
+        except Exception as exc:
+            raise MCPConnectionError(f"Failed to connect to Notion API: {exc}") from exc
     
     # ------------------------------------------------------------------
     # Poller interface
@@ -75,13 +86,16 @@ class NotionMCPClient:
         Returns:
             Dict with 'results' key containing list of page objects.
         """
-        # TODO: Call Notion MCP search tool
-        # Example MCP call:
-        # result = mcp_client.call_tool("notion_search", {
-        #     "query": query,
-        #     "filter": filter
-        # })
-        return {"results": []}
+        self._ensure_client()
+        try:
+            # Notion API search with filter
+            response = self._client.search(
+                query=query,
+                filter=filter
+            )
+            return response
+        except Exception as exc:
+            raise MCPConnectionError(f"Notion search failed: {exc}") from exc
     
     # ------------------------------------------------------------------
     # IdeaExtractor interface
@@ -101,17 +115,16 @@ class NotionMCPClient:
         Returns:
             Dict with 'results', 'has_more', and 'next_cursor' keys.
         """
-        # TODO: Call Notion MCP get_block_children tool
-        # Example MCP call:
-        # result = mcp_client.call_tool("notion_get_block_children", {
-        #     "block_id": block_id,
-        #     "start_cursor": start_cursor
-        # })
-        return {
-            "results": [],
-            "has_more": False,
-            "next_cursor": None
-        }
+        self._ensure_client()
+        try:
+            kwargs = {"block_id": block_id}
+            if start_cursor:
+                kwargs["start_cursor"] = start_cursor
+            
+            response = self._client.blocks.children.list(**kwargs)
+            return response
+        except Exception as exc:
+            raise MCPConnectionError(f"Failed to get block children: {exc}") from exc
     
     # ------------------------------------------------------------------
     # NotionWriter interface
@@ -126,10 +139,12 @@ class NotionMCPClient:
         Returns:
             Dict with 'id' key containing the new database ID.
         """
-        # TODO: Call Notion MCP create_database tool
-        # Example MCP call:
-        # result = mcp_client.call_tool("notion_create_database", payload)
-        return {"id": "mock-database-id"}
+        self._ensure_client()
+        try:
+            response = self._client.databases.create(**payload)
+            return response
+        except Exception as exc:
+            raise MCPConnectionError(f"Failed to create database: {exc}") from exc
     
     def create_page(self, payload: dict) -> dict:
         """Create a Notion page.
@@ -140,10 +155,12 @@ class NotionMCPClient:
         Returns:
             Dict with 'id' key containing the new page ID.
         """
-        # TODO: Call Notion MCP create_page tool
-        # Example MCP call:
-        # result = mcp_client.call_tool("notion_create_page", payload)
-        return {"id": "mock-page-id"}
+        self._ensure_client()
+        try:
+            response = self._client.pages.create(**payload)
+            return response
+        except Exception as exc:
+            raise MCPConnectionError(f"Failed to create page: {exc}") from exc
     
     def append_block_children(self, page_id: str, children: list[dict]) -> dict:
         """Append block children to a Notion page.
@@ -155,13 +172,15 @@ class NotionMCPClient:
         Returns:
             Dict with 'results' key containing the created blocks.
         """
-        # TODO: Call Notion MCP append_block_children tool
-        # Example MCP call:
-        # result = mcp_client.call_tool("notion_append_block_children", {
-        #     "block_id": page_id,
-        #     "children": children
-        # })
-        return {"results": children}
+        self._ensure_client()
+        try:
+            response = self._client.blocks.children.append(
+                block_id=page_id,
+                children=children
+            )
+            return response
+        except Exception as exc:
+            raise MCPConnectionError(f"Failed to append blocks: {exc}") from exc
     
     def update_page(self, page_id: str, properties: dict) -> dict:
         """Update a Notion page's properties.
@@ -173,10 +192,12 @@ class NotionMCPClient:
         Returns:
             Dict with updated page object.
         """
-        # TODO: Call Notion MCP update_page tool
-        # Example MCP call:
-        # result = mcp_client.call_tool("notion_update_page", {
-        #     "page_id": page_id,
-        #     "properties": properties
-        # })
-        return {"id": page_id, "properties": properties}
+        self._ensure_client()
+        try:
+            response = self._client.pages.update(
+                page_id=page_id,
+                properties=properties
+            )
+            return response
+        except Exception as exc:
+            raise MCPConnectionError(f"Failed to update page: {exc}") from exc

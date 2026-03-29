@@ -431,7 +431,11 @@ def start_poller(
 # ---------------------------------------------------------------------------
 
 def _default_notion_client() -> Any:
-    """Return a minimal notion client stub (real wiring happens in task 13.x)."""
+    """Return a Notion client if NOTION_API_KEY is set, otherwise None."""
+    import os
+    if os.environ.get("NOTION_API_KEY"):
+        from orchestrator.notion_mcp_client import NotionMCPClient
+        return NotionMCPClient()
     return None
 
 

@@ -30,6 +30,8 @@ Required:
 - `GROQ_API_KEY` - Get from https://console.groq.com/
 - `NOTION_API_KEY` - Get from https://www.notion.so/my-integrations
 
+See [NOTION_SETUP.md](docs/NOTION_SETUP.md) for detailed Notion integration setup.
+
 ### 3. Test the Pipeline
 
 ```bash
@@ -62,8 +64,10 @@ Notion Page → Notion MCP → Orchestrator → Kiro Agent
 
 ## Documentation
 
-- [SETUP.md](SETUP.md) - Detailed setup guide
-- [TESTING.md](TESTING.md) - Testing guide and troubleshooting
+- [NOTION_SETUP.md](docs/NOTION_SETUP.md) - Notion integration setup
+- [GROQ_SETUP.md](docs/GROQ_SETUP.md) - Groq API setup
+- [SETUP.md](docs/SETUP.md) - Detailed setup guide
+- [TESTING.md](docs/TESTING.md) - Testing guide and troubleshooting
 - [.env.example](.env.example) - Configuration options
 
 ## Usage

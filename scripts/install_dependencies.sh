@@ -28,7 +28,7 @@ fi
 
 echo
 echo "Installing packages..."
-$INSTALL_CMD groq python-dotenv pytest hypothesis
+$INSTALL_CMD groq notion-client python-dotenv pytest hypothesis
 
 echo
 echo "✓ Dependencies installed successfully!"
