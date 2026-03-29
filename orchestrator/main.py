@@ -180,6 +180,10 @@ def run_pipeline(
     # Resolve notion_client from environment when not injected
     if notion_client is None:
         notion_client = _default_notion_client()
+    
+    # Resolve llm_client from environment when not injected
+    if llm_client is None:
+        llm_client = _default_llm_client()
 
     # Check MCP connection at startup
     _check_mcp_connection(notion_client)
@@ -428,6 +432,15 @@ def start_poller(
 
 def _default_notion_client() -> Any:
     """Return a minimal notion client stub (real wiring happens in task 13.x)."""
+    return None
+
+
+def _default_llm_client() -> Any:
+    """Return a Groq LLM client if GROQ_API_KEY is set, otherwise None."""
+    import os
+    if os.environ.get("GROQ_API_KEY"):
+        from orchestrator.groq_client import GroqClient
+        return GroqClient()
     return None
 
 
