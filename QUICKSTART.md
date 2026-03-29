@@ -2,7 +2,7 @@
 
 Your Notion Spec-to-Ship Pipeline is ready! Follow these steps to test it.
 
-## ✅ What's Already Done
+## What's Already Done
 
 - ✅ Groq API integration (tested and working)
 - ✅ Notion API client (tested and working)
