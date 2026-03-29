@@ -32,14 +32,14 @@ def main():
         print()
         
         # Test search
-        print("Testing search for [SHIP] pages...")
+        print("Testing search for [CALCULATOR] pages...")
         results = client.search(
-            query="[SHIP]",
+            query="[CALCULATOR]",
             filter={"property": "object", "value": "page"}
         )
         
         pages = results.get("results", [])
-        print(f"✓ Found {len(pages)} page(s) with [SHIP] in title")
+        print(f"✓ Found {len(pages)} page(s) with [CALCULATOR] in title")
         print()
         
         if pages:
